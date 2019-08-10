@@ -7,8 +7,10 @@ import sys
 
 def merge_images():
     segmented_images[0] = np.ones(segmented_images[0].shape, dtype=bool)
-    for i in range(len(transformed_image_files)):
+    for i in range(1, len(transformed_image_files)):
         transformed_images[i][~segmented_images[i]] = 0
+        segmented_images[0] = segmented_images[0] & ~segmented_images[i]
+    transformed_images[0][~segmented_images[0]] = 0
     
     scaler = np.sum(segmented_images, axis=0)
     scaler = np.repeat(scaler, 3).reshape(scaler.shape + (3,))
