@@ -51,6 +51,7 @@ if __name__ == "__main__":
     images += glob.glob(osp.join(folder, '*.jpg'))
     images += glob.glob(osp.join(folder, '*.png'))
     images = [im for im in images if 'transformed' not in im]
+    images = [im for im in images if 'segmented' not in im]
     images = sorted(images)
 
     loaded_images = None
