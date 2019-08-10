@@ -22,7 +22,9 @@ def transform_images(hs=None):
         h = hs[3*i:3*(i+1), :]
         im_out = cv2.warpPerspective(loaded_images[i], h, (shape_dst[1], shape_dst[0]))
         directory, filename = osp.split(images[i])
-        cv2.imwrite(osp.join(directory, 'transformed_' + filename), im_out)
+        file_base = osp.splitext(filename)[0]
+        new_name = osp.join(directory, 'transformed_' + file_base + '.png')
+        cv2.imwrite(new_name, im_out)
 
 def onclick(event):
     global i, j
