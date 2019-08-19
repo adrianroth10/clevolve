@@ -23,6 +23,14 @@ def transform_images(hs=None):
         im_out = cv2.warpPerspective(loaded_images[i], h, (shape_dst[1], shape_dst[0]))
         directory, filename = osp.split(images[i])
         cv2.imwrite(osp.join(directory, 'transformed_' + filename), im_out)
+        segmented_f = osp.join(directory, 'segmented_' + filename)
+        if osp.isfile(segmented_f):
+            seg_im = cv2.imread(segmented_f, 0)
+            seg_im = cv2.warpPerspective(seg_im, h, (shape_dst[1], shape_dst[0]))
+            seg_im[seg_im < 255] = 0
+            cv2.imwrite(osp.join(directory, 'segmented_transformed_' + filename), seg_im)
+
+
 
 def onclick(event):
     global i, j
