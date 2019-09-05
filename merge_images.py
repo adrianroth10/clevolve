@@ -5,7 +5,39 @@ import os.path as osp
 # import matplotlib.pyplot as plt
 import numpy as np
 import sys
-import arpack.cxx_wrapper as cxx
+
+def is_edge(i, j, mask):
+    if i == 0 or i == mask.shape[0] or j == 0 or j == mask.shape[1]:
+        return False
+    return (mask[i, j - 1] or
+            mask[i, j + 1] or
+            mask[i - 1, j] or
+            mask[i + 1, j])
+
+def depth_map(mask, lim):
+    shape = mask.shape
+    rs, cs = np.where(~mask)
+    queue = []
+    for k in range(rs.size):
+        if is_edge(rs[k], cs[k], mask):
+            queue.extend([(rs[k], cs[k], 0)])
+
+
+    dm = np.ones(shape) * -lim
+    visited = mask.astype(int) * -1
+    while queue:
+        ri, ci, d = queue.pop(0)
+        sign = visited[ri, ci] * 2 + 1;
+        if (ri >= 0 and ri < shape[0] and
+            ci >= 0 and ci < shape[1] and
+            visited[ri, ci] != 1 and (d * sign) >= -lim):
+            visited[ri, ci] = 1
+            dm[ri, ci] = sign * d
+            d += 1
+            queue.extend([(ri, ci + 1, d), (ri, ci - 1, d),
+                          (ri + 1, ci, d), (ri - 1, ci, d)])
+    return dm
+
 
 def scale_merge_print(background_image, segmented_images, transformed_images, filename):
     scaler = np.sum(segmented_images, axis=0)
@@ -17,9 +49,10 @@ def scale_merge_print(background_image, segmented_images, transformed_images, fi
     cv2.imwrite(osp.join(folder, filename), merged_image)
 
 def sigmoid_it(segmented_image, transformed_image=None):
-    dm = cxx.depth_map(~(segmented_image > 0.5))
-    outside = dm < -5
-    inside = dm > 5
+    lim = 5
+    dm = depth_map(~(segmented_image > 0.5), lim + 1)
+    outside = dm < -lim
+    inside = dm > lim
     dm[outside] = 0
     sigmoid = (1 / (1 + np.exp(-dm / 2)))
     sigmoid[outside] = 0
@@ -46,14 +79,8 @@ def forward_nand_merge(segmented_images, transformed_images):
 
 def simple_merge(segmented_images, transformed_images):
     background_image = transformed_images[0].copy()
-    first_seg = segmented_images[0].copy()
-    segmented_images[0] = np.ones(segmented_images[0].shape, dtype=bool)
-    for i in range(1, len(transformed_image_files)):
+    for i in range(len(transformed_image_files)):
         transformed_images[i][~segmented_images[i]] = 0
-        segmented_images[0] = segmented_images[0] & ~segmented_images[i]
-    segmented_images[0] = segmented_images[0] | first_seg
-    transformed_images[0][~segmented_images[0]] = 0
-    
     scale_merge_print(background_image, segmented_images, transformed_images, 'merge_simple.png')
 
 
