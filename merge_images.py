@@ -48,7 +48,7 @@ def scale_merge_print(background_image, segmented_images, transformed_images, fi
     merged_image = ((np.sum(transformed_images, axis=0) + background_image) / scaler).astype(np.uint8)
     cv2.imwrite(osp.join(folder, filename), merged_image)
 
-def sigmoid_it(segmented_image, transformed_image=None):
+def sigmoid_it(segmented_image, transformed_image):
     lim = 5
     dm = depth_map(~(segmented_image > 0.5), lim + 1)
     outside = dm < -lim
@@ -57,11 +57,8 @@ def sigmoid_it(segmented_image, transformed_image=None):
     sigmoid = (1 / (1 + np.exp(-dm / 2)))
     sigmoid[outside] = 0
     sigmoid[inside] = 1
-    if transformed_image is None:
-        return sigmoid
-    else:
-        return [sigmoid,
-                (transformed_image * np.repeat(sigmoid, 3).reshape(transformed_image.shape))]
+    return [sigmoid,
+            (transformed_image * np.repeat(sigmoid, 3).reshape(transformed_image.shape))]
 
 def forward_nand_merge(segmented_images, transformed_images):
     segmented_images = np.array(segmented_images, dtype=float)
