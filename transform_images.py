@@ -22,12 +22,18 @@ def transform_images(hs=None):
         h = hs[3*i:3*(i+1), :]
         im_out = cv2.warpPerspective(loaded_images[i], h, (shape_dst[1], shape_dst[0]))
         directory, filename = osp.split(images[i])
-        file_base = osp.splitext(filename)[0]
-        new_name = osp.join(directory, 'transformed_' + file_base + '.png')
-        cv2.imwrite(new_name, im_out)
+        cv2.imwrite(osp.join(directory, 'transformed_' + filename), im_out)
+        segmented_f = osp.join(directory, 'segmented_' + filename)
+        if osp.isfile(segmented_f):
+            seg_im = cv2.imread(segmented_f, 0)
+            seg_im = cv2.warpPerspective(seg_im, h, (shape_dst[1], shape_dst[0]))
+            seg_im[seg_im < 255] = 0
+            cv2.imwrite(osp.join(directory, 'segmented_transformed_' + filename), seg_im)
 
+imshow = None
+plot_points = []
 def onclick(event):
-    global i, j
+    global i, j, imshow, plot_points
     ix, iy = event.xdata, event.ydata
     points[i, j, 0] = ix
     points[i, j, 1] = iy
@@ -41,9 +47,15 @@ def onclick(event):
         plt.close()
         transform_images()
     else:
-        ax.imshow(loaded_images[i])
+        for p in plot_points:
+            p.pop(0).remove()
+        plot_points = []
+        if not imshow is None:
+            imshow.remove()
+        imshow = ax.imshow(loaded_images[i])
         if j > 0:
-            ax.plot(points[i, j - 1, 0], points[i, j - 1, 1], '.', linewidth=7)
+            for k in range(j):
+                plot_points += [ax.plot(points[i, k, 0], points[i, k, 1], '.', linewidth=7)]
         fig.canvas.draw()
 
 
@@ -54,6 +66,7 @@ if __name__ == "__main__":
     images += glob.glob(osp.join(folder, '*.JPG'))
     images += glob.glob(osp.join(folder, '*.png'))
     images = [im for im in images if 'transformed' not in im]
+    images = [im for im in images if 'segmented' not in im]
     images = sorted(images)
 
     loaded_images = []
