@@ -51,16 +51,22 @@ if __name__ == "__main__":
     folder = sys.argv[-1]
     images = []
     images += glob.glob(osp.join(folder, '*.jpg'))
+    images += glob.glob(osp.join(folder, '*.JPG'))
     images += glob.glob(osp.join(folder, '*.png'))
     images = [im for im in images if 'transformed' not in im]
     images = sorted(images)
 
-    loaded_images = None
+    loaded_images = []
+    min_shape = [10000, 10000]
     for i, im in enumerate(images):
         load_im = cv2.imread(im)
-        if loaded_images is None:
-            loaded_images = np.zeros((len(images),) + load_im.shape, dtype=np.uint8)
-        loaded_images[i] = load_im
+        loaded_images += [load_im]
+        min_shape[0] = min(load_im.shape[0], min_shape[0])
+        min_shape[1] = min(load_im.shape[1], min_shape[1])
+
+    for i in range(len(loaded_images)):
+        loaded_images[i] = loaded_images[i][:min_shape[0], :min_shape[1]]
+    loaded_images = np.array(loaded_images)
 
     n_points = 4
     points = np.zeros((len(images), n_points, 2))
