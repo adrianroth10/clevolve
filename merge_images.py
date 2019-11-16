@@ -7,7 +7,7 @@ import numpy as np
 import sys
 
 def is_edge(i, j, mask):
-    if i == 0 or i == mask.shape[0] or j == 0 or j == mask.shape[1]:
+    if i <= 0 or i >= mask.shape[0] - 1 or j <= 0 or j >= mask.shape[1] - 1:
         return False
     return (mask[i, j - 1] or
             mask[i, j + 1] or
@@ -27,10 +27,10 @@ def depth_map(mask, lim):
     visited = mask.astype(int) * -1
     while queue:
         ri, ci, d = queue.pop(0)
+        if ri < 0 or ri >= shape[0] or ci < 0 or ci >= shape[1]:
+            continue
         sign = visited[ri, ci] * 2 + 1;
-        if (ri >= 0 and ri < shape[0] and
-            ci >= 0 and ci < shape[1] and
-            visited[ri, ci] != 1 and (d * sign) >= -lim):
+        if visited[ri, ci] != 1 and (d * sign) >= -lim:
             visited[ri, ci] = 1
             dm[ri, ci] = sign * d
             d += 1
@@ -94,10 +94,12 @@ if __name__ == "__main__":
     else:
         folder = sys.argv[-1]
         ty = 1
-    transformed_image_files = glob.glob(osp.join(folder, 'transformed_*.png'))
-    segmented_image_files = glob.glob(osp.join(folder, 'segmented_transformed_*.png'))
+    transformed_image_files = glob.glob(osp.join(folder, '*.png'))
+    segmented_image_files = glob.glob(osp.join(folder, 'segmented_*.png'))
     transformed_image_files = sorted(transformed_image_files)
     segmented_image_files = sorted(segmented_image_files)
+
+    transformed_image_files = [f for f in transformed_image_files if not 'segmented' in f]
 
     
     transformed_images = None
